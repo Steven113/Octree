@@ -104,7 +104,7 @@ namespace OctreeDS
 			//bounds.DrawAABB ();
 			if (Bounds.ContainsPoint(itemBounds.center) || Bounds.Overlaps(itemBounds)){
 
-				foreach (var itemInNode in ObjectsInNode){
+				foreach (var itemInNode in ObjectsInNode.Where(o => itemBounds.Overlaps(o.AABB))){
 					items.Add(itemInNode);
 				}
 

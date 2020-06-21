@@ -47,6 +47,36 @@ namespace OctreeTests
             }
             #endregion
 
+            #region Edge case: inserting object that exactly touches tree border
+            foreach (var extent in treeBounds.EnumerateExtents())
+            {
+                var extentDir = new Vector3(Math.Sign(extent.x), Math.Sign(extent.y), Math.Sign(extent.z));
+                var offset = extentDir * TestObject.Dimensions;
+
+                var testObj = new TestObject(treeBounds.center + extent - offset);
+
+                octree.Insert(testObj);
+
+                insertedObjects.Add(testObj);
+            }
+            #endregion
+
+            var objectsOutsideTree = new List<TestObject>();
+
+            #region Insert objects which do not fit in the tree
+            foreach (var extent in treeBounds.EnumerateExtents())
+            {
+                var extentDir = new Vector3(Math.Sign(extent.x), Math.Sign(extent.y), Math.Sign(extent.z));
+                var offset = extentDir * TestObject.Dimensions;
+
+                var testObj = new TestObject(treeBounds.center + extent + offset);
+
+                octree.Insert(testObj);
+
+                objectsOutsideTree.Add(testObj);
+            }
+            #endregion
+
             #region Getting all items in tree returns correct result
 
             var allItemsInTree = octree.getAllContents().ToHashSet();
@@ -54,6 +84,11 @@ namespace OctreeTests
             foreach (var testObj in insertedObjects)
             {
                 Assert.IsTrue(allItemsInTree.Contains(testObj), $"The object {testObj} was inserted into the octree but was not found when fetching all objects");
+            }
+
+            foreach (var testObj in objectsOutsideTree)
+            {
+                Assert.IsFalse(allItemsInTree.Contains(testObj), $"The object {testObj} falls outside the tree bounds but was successfully inserted into the tree");
             }
 
             #endregion
@@ -70,12 +105,22 @@ namespace OctreeTests
                     var queryAABB = AABB.Create(new[] { bottomCorner, upperCorner });
 
                     octree.GetOverlappingItems(queryAABB, out var queryResult);
+
+                    var queryResultHashset = queryResult.ToHashSet();
+
+                    foreach (var item in allItemsInTree)
+                    {
+                        if (queryAABB.Overlaps(item.AABB))
+                        {
+                            Assert.IsTrue(queryResultHashset.Contains(item), $"{item} overlaps query bounds {queryAABB} but was not found in the results");
+                        }
+                        else if (queryResultHashset.Contains(item))
+                        {
+                            Assert.Fail($"Query bounds {queryAABB} does not overlap {item} but it was in the results set");
+                        }
+                    }
                 }
             }
-            #endregion
-
-            #region Edge case: inserting object that exactly touches tree border
-
             #endregion
 
         }
@@ -84,11 +129,12 @@ namespace OctreeTests
         {
             public AABB AABB { get; private set; }
             private Vector3 Position { get; }
+            public const float Dimensions = 0.5f;
 
             public TestObject(Vector3 position)
             {
                 Position = position;
-                AABB = new AABB(position, Vector3.one * minNodeWidth * 0.5f);
+                AABB = new AABB(position, Vector3.one * minNodeWidth * Dimensions);
             }
 
             public override bool Equals(object obj)
