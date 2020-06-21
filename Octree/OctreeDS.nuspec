@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>OctreeUnity</id>
+    <version>1.0.0.0</version>
+    <title>Unity Octree</title>
+    <authors>Steven Tupper</authors>
+    <owners>Steven Tupper</owners>
+    <projectUrl>https://github.com/Steven113/Octree</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A implementation of an Octree, for Unity</description>
+    <copyright>Copyright 2020</copyright>
+    <tags></tags>
+  </metadata>
+</package>
