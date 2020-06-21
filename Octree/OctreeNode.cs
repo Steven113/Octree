@@ -102,7 +102,7 @@ namespace OctreeDS
 
 		public void GetOverlappingItems(AABB itemBounds, ref Collection<T> items){
 			//bounds.DrawAABB ();
-			if (Bounds.ContainsPoint(itemBounds.center) || Bounds.Overlaps(itemBounds)){
+			if (Bounds.Overlaps(itemBounds)){
 
 				foreach (var itemInNode in ObjectsInNode.Where(o => itemBounds.Overlaps(o.AABB))){
 					items.Add(itemInNode);
