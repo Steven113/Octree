@@ -100,42 +100,44 @@ namespace OctreeDS
 			}
 		}
 
-		public void GetOverlappingItems(AABB itemBounds, ref Collection<T> items){
-			//bounds.DrawAABB ();
-			if (Bounds.Overlaps(itemBounds)){
+        public delegate bool AABBQuery(AABB nodeBounds);
 
-				foreach (var itemInNode in ObjectsInNode.Where(o => itemBounds.Overlaps(o.AABB))){
+		public void Query(AABBQuery query, ref Collection<T> items){
+			//bounds.DrawAABB ();
+			if (query(Bounds)){
+
+				foreach (var itemInNode in ObjectsInNode.Where(o => query(o.AABB))){
 					items.Add(itemInNode);
 				}
 
 				for (int i = 0; i<Children.Count; ++i){
-					Children[i].GetOverlappingItems(itemBounds,ref items);
+					Children[i].Query(query, ref items);
 
 				}
 			}
 		}
 
-        public void GetOverlappingItems(Vector3 pos, ref Collection<T> items)
-        {
-            //bounds.DrawAABB ();
-            if (Bounds.ContainsPoint(pos))
-            {
+        //public void Query(Vector3 pos, ref Collection<T> items)
+        //{
+        //    //bounds.DrawAABB ();
+        //    if (Bounds.ContainsPoint(pos))
+        //    {
 
-                int count = ObjectsInNode.Count;
-                for (int i = 0; i < count; ++i)
-                {
-                    items.Add(ObjectsInNode[i]);
-                    //Debug.DrawRay(bounds.center.FlattenVector()+new Vector3Custom(0,5,0),(getAABBFunc(objectsInNode[i]).center-bounds.center).FlattenVector(),Color.red,3f);
-                }
+        //        int count = ObjectsInNode.Count;
+        //        for (int i = 0; i < count; ++i)
+        //        {
+        //            items.Add(ObjectsInNode[i]);
+        //            //Debug.DrawRay(bounds.center.FlattenVector()+new Vector3Custom(0,5,0),(getAABBFunc(objectsInNode[i]).center-bounds.center).FlattenVector(),Color.red,3f);
+        //        }
 
-                for (int i = 0; i < Children.Count; ++i)
-                {
-                    //Debug.DrawRay(bounds.center.FlattenVector()+new Vector3Custom(0,5,0),(nodeList[children[i]].bounds.center-bounds.center).FlattenVector(),Color.green,3f);
-                    Children[i].GetOverlappingItems(pos, ref items);
+        //        for (int i = 0; i < Children.Count; ++i)
+        //        {
+        //            //Debug.DrawRay(bounds.center.FlattenVector()+new Vector3Custom(0,5,0),(nodeList[children[i]].bounds.center-bounds.center).FlattenVector(),Color.green,3f);
+        //            Children[i].GetOverlappingItems(pos, ref items);
 
-                }
-            }
-        }
+        //        }
+        //    }
+        //}
     }
 }
 

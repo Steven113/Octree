@@ -137,7 +137,14 @@ namespace OctreeDS
             return true;
         }
 
-		public void DrawAABB(Color color, float debugDrawTime = 1f)
+        public bool RayIntersects(Ray ray)
+        {
+            var closestPoint = Utils.ClosestPointOnLine(ray, center);
+
+            return ContainsPoint(closestPoint);
+        }
+
+        public void DrawAABB(Color color, float debugDrawTime = 1f)
         {
             var extentsToRotate = extents;
             var debugDrawDirections = new[] { -Vector3.up, -Vector3.right, -Vector3.forward }.Select(dir => Vector3.Scale(dir, extentsToRotate)).ToArray();

@@ -61,7 +61,7 @@ namespace OctreeDS
 
             items = new Collection<T>();
 
-            root.GetOverlappingItems (itemAABB, ref items);
+            root.Query (nodeBounds => nodeBounds.Overlaps(itemAABB), ref items);
             //itemAABB.DrawAABB(Color.red);
 
         }

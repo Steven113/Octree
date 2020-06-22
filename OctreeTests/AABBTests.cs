@@ -10,7 +10,12 @@ namespace OctreeTests
     public class AABBTests
     {
         public readonly Vector3 TestAABBDimensions = Vector3.one;
-        public AABB TestAABB => new AABB(Vector3.one * 2, TestAABBDimensions);
+        public AABB TestAABB { get; }
+
+        public AABBTests()
+        {
+            TestAABB = new AABB(Vector3.one * 2, TestAABBDimensions);
+        }
 
         [TestMethod]
         public void ContainsPoint()
@@ -49,6 +54,27 @@ namespace OctreeTests
 
                 Assert.IsFalse(TestAABB.Encloses(definatelyNotContainedAABB), $"{TestAABB} should not enclose {definatelyNotContainedAABB}");
             }
+        }
+
+        [TestMethod]
+        public void RayIntersects()
+        {
+            var ray = new Ray(TestAABB.center - TestAABB.extents * 2, TestAABB.extents);
+            Assert.IsTrue(TestAABB.RayIntersects(ray), "Ray passes through centre, it should intersect");
+
+            ray.direction = Vector3.right;
+
+            Assert.IsFalse(TestAABB.RayIntersects(ray), "Ray cannot possibly pass through bounds");
+
+            ray.origin = new Vector3(TestAABB.center.x - TestAABB.extents.x * 4, TestAABB.center.y, TestAABB.center.z);
+            ray.direction = TestAABB.extents;
+
+            Assert.IsFalse(TestAABB.RayIntersects(ray), "Ray cannot possibly pass through bounds");
+
+            //"glancing hit"
+            ray.origin = new Vector3(TestAABB.center.x - TestAABB.extents.x * 2, TestAABB.center.y, TestAABB.center.z);
+            ray.direction = new Vector3(TestAABB.extents.x, 0, 0);
+            Assert.IsTrue(TestAABB.RayIntersects(ray), "Ray touches the edge of the bounding box, it should intersect");
         }
     }
 }
