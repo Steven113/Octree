@@ -47,7 +47,8 @@ namespace OctreeDS
         
         public bool SubdivisionCanContainItem(T item)
         {
-            return Enumerable.Range(0, 3).All(i => item.AABB.extents[i] < Bounds.extents[i] / 2);
+            //make sure that no axis passing through the centre of this node can split the item in two
+            return !Enumerable.Range(0, 3).Any(i => item.AABB.center[i] + item.AABB.extents[i] > Bounds.center[i] && item.AABB.center[i] - item.AABB.extents[i] < Bounds.center[i]);
         }
 
         public bool Insert(T item, bool debugRender = false){
