@@ -53,14 +53,29 @@ namespace OctreeDS
 			return items.ToList();
 		}
 
-		public void GetOverlappingItems(AABB itemAABB, out Collection<T> items){
+		public void GetOverlappingItems(AABB itemAABB, out ICollection<T> items){
 
             items = new Collection<T>();
 
             root.Query (nodeBounds => nodeBounds.Overlaps(itemAABB), ref items);
-            //itemAABB.DrawAABB(Color.red);
-
         }
+
+		public delegate bool RaycastTest(T item, Ray ray);
+
+		/// <summary>
+		/// Get all items that are intersected by the raycast
+		/// </summary>
+		/// <param name="ray">Ray for fetching items</param>
+		/// <param name="rayCastTest">A callback to determine whether an item actually is intersected by the ray. The method only finds objects whose bounds intersect the ray, you must define how to raycast against the actual object</param>
+		/// <param name="items">The items hit by the raycast</param>
+		public void Raycast(Ray ray, RaycastTest rayCastTest, out ICollection<T> items)
+		{
+			items = new Collection<T>();
+
+			root.Query(nodeBounds => nodeBounds.RayIntersects(ray), ref items);
+
+			items = items.Where(t => rayCastTest(t, ray)).ToList();
+		}
 
 		public bool Remove(T item)
 		{

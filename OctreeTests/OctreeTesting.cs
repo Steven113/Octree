@@ -15,7 +15,7 @@ namespace OctreeTests
         private const int distanceOfSideOfTreeFromCentre = dimensionOfOtree / 2;
 
         [TestMethod]
-        public void ItemRetrieval()
+        public void ItemRetrieval_AABB()
         {
             var treeBounds = new AABB(Vector3.zero, new Vector3(distanceOfSideOfTreeFromCentre, distanceOfSideOfTreeFromCentre, distanceOfSideOfTreeFromCentre));
             var octree = new Octree<TestObject>(minNodeWidth, treeBounds);
@@ -193,6 +193,47 @@ namespace OctreeTests
 
             octree.GetOverlappingItems(testAABBInitial, out expectedEmpty);
             Assert.IsTrue(!expectedEmpty.Any(), "Found item in area where there should be no items");
+        }
+
+        [TestMethod]
+        public void ItemRetrieval_Raycast()
+        {
+            var treeBounds = new AABB(Vector3.zero, new Vector3(distanceOfSideOfTreeFromCentre, distanceOfSideOfTreeFromCentre * 2, distanceOfSideOfTreeFromCentre));
+            var octree = new Octree<TestObject>(minNodeWidth, treeBounds);
+
+            var testObject = new TestObject(new Vector3(treeBounds.center.x, treeBounds.center.x + treeBounds.extents.y / 2, treeBounds.center.z));
+
+            Assert.IsTrue(octree.Insert(testObject));
+
+            var testRayInitial = new Ray(testObject.AABB.center, Vector3.right);
+            var testRaySecond = new Ray(new Vector3(treeBounds.center.x, treeBounds.center.x - treeBounds.extents.y / 2, treeBounds.center.z), Vector3.right);
+
+            bool RayCastTest_UT(TestObject item, Ray ray)
+            {
+                return item.AABB.RayIntersects(ray);
+            }
+
+            {
+                octree.Raycast(testRayInitial, RayCastTest_UT, out var expectInsertedItem);
+
+                Assert.AreEqual(1, expectInsertedItem.Count, "Expected to find item just inserted and nothing else");
+                Assert.IsTrue(expectInsertedItem.Contains(testObject), "Expected to find item just inserted");
+
+                octree.Raycast(testRaySecond, RayCastTest_UT, out var expectedEmpty);
+                Assert.IsTrue(!expectedEmpty.Any(), "Found item in area where there should be no items");
+            }
+
+            octree.EditItem(testObject, obj => obj.AABB = new AABB(new Vector3(treeBounds.center.x, treeBounds.center.x - treeBounds.extents.y / 2, treeBounds.center.z), obj.AABB.extents));
+            
+            {
+                octree.Raycast(testRaySecond, RayCastTest_UT, out var expectInsertedItem);
+
+                Assert.AreEqual(1, expectInsertedItem.Count, "Expected to find item just inserted and nothing else");
+                Assert.IsTrue(expectInsertedItem.Contains(testObject), "Expected to find item just inserted");
+
+                octree.Raycast(testRayInitial, RayCastTest_UT, out var expectedEmpty);
+                Assert.IsTrue(!expectedEmpty.Any(), "Found item in area where there should be no items");
+            }
         }
 
         public class TestObject : IAABBBoundedObject

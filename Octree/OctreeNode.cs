@@ -171,7 +171,7 @@ namespace OctreeDS
 
         public delegate bool AABBQuery(AABB nodeBounds);
 
-		public void Query(AABBQuery query, ref Collection<T> items){
+		public void Query(AABBQuery query, ref ICollection<T> items){
 			//bounds.DrawAABB ();
 			if (query(Bounds)){
 
