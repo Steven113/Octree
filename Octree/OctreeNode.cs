@@ -21,25 +21,33 @@ namespace OctreeDS
         public AABB Bounds { get; }
 		public List<OctreeNode<T>> Children { get; }  = new List<OctreeNode<T>> ();
 		public List<T> ObjectsInNode { get; } = new List<T>();
+        public IEnumerable<T> ObjectsInNodeThatCanFitInSubdivision => ObjectsInNode.Where(x => SubdivisionCanContainItem(x));
 		public OctreeNode<T> Parent { get; }
         public float MinDimensionOfNode { get; }
-        public bool ShouldHaveChildren { get; }
+        public bool CanHaveChildren { get; }
+        public int NumObjectsInChildren => Children.Sum(c => c.ObjectsInNode.Count); 
+        /// <summary>
+        /// How many items a node will store directly before it allows the node to be subdivided
+        /// This count does not include items that could not be inserted into the subdivisions (items that intersect the lines that cut the node into subdvisions)
+        /// </summary>
+        const int SubdivisionThreshold = 8 - 1;
+        static readonly int MergeThreshold = (int)Math.Ceiling(((float)SubdivisionThreshold) / 8);
 
-		//mins and maxes are global, position is global. Minx and maxes adjusted based on centre
-		public OctreeNode (float minDimensionOfNode,AABB nodeBounds)
+        //mins and maxes are global, position is global. Minx and maxes adjusted based on centre
+        public OctreeNode (float minDimensionOfNode,AABB nodeBounds)
 		{
             //this.paren;
             Bounds = nodeBounds;
 
             MinDimensionOfNode = minDimensionOfNode;
 
-            ShouldHaveChildren = true;
+            CanHaveChildren = true;
 
             foreach (var i in Enumerable.Range(0, 3))
             {
                 if (Bounds.extents[i] * 2 < minDimensionOfNode)
                 {
-                    ShouldHaveChildren = false;
+                    CanHaveChildren = false;
                     break;
                 }
             }
@@ -54,11 +62,17 @@ namespace OctreeDS
         public bool Insert(T item, bool debugRender = false){
 			AABB itemAABB = item.AABB;
 			if (Bounds.Encloses (itemAABB)) {
-				if (!ShouldHaveChildren || !SubdivisionCanContainItem(item))
+				if (!CanHaveChildren || !SubdivisionCanContainItem(item))
                 {
                     ObjectsInNode.Add(item);
                     return true;
-                } else
+                }
+                else if (SubdivisionThreshold <= ObjectsInNodeThatCanFitInSubdivision.Count())
+                {
+                    ObjectsInNode.Add(item);
+                    return true;
+                }
+                else
                 {
                     if (Children.Count == 0)
                     {
@@ -72,14 +86,25 @@ namespace OctreeDS
                         }
                     }
 
+                    foreach (var objectToMoveToChild in ObjectsInNodeThatCanFitInSubdivision.ToList())
+                    {
+                        ObjectsInNode.Remove(objectToMoveToChild);
+
+                        foreach (var child in Children)
+                        {
+                            if (child.Insert(objectToMoveToChild, debugRender))
+                                break;
+                        }
+                    }
+
+
                     foreach (var child in Children)
                     {
                         if (child.Insert(item, debugRender))
                             return true;
                     }
 
-                    ObjectsInNode.Add(item);
-                    return true;
+                    throw new NotImplementedException("The item could not be inserted into this tree or any subdivision, this suggests a mistake in choosing to insert into this node");
 
                 }
 			} else if (debugRender)
@@ -87,10 +112,53 @@ namespace OctreeDS
                 Bounds.DrawAABB(Color.red);
                 item.AABB.DrawAABB(Color.green);
             }
-			return false;
-		}
 
-		public void getAllContents(ref Collection<T> items){
+            return false;
+        }
+
+        public bool Remove(T item, bool debugRender = false)
+        {
+            AABB itemAABB = item.AABB;
+            if (Bounds.Encloses(itemAABB))
+            {
+                if (!CanHaveChildren || !SubdivisionCanContainItem(item))
+                {
+                    return ObjectsInNode.Remove(item);
+                }
+                else
+                {
+                    var removed = false;
+
+                    foreach (var child in Children)
+                    {
+                        if (child.Remove(item, debugRender))
+                        {
+                            removed = true;
+                            break;
+                        }
+                    }
+
+                    if (!removed) throw new NotImplementedException("The item could not be deleted into this tree or any subdivision, this suggests a mistake in choosing to delete the item from this node");
+
+                    if (NumObjectsInChildren < MergeThreshold)
+                    {
+                        ObjectsInNode.AddRange(Children.SelectMany(c => c.ObjectsInNode));
+                        Children.Clear();
+                    }
+
+                    return removed;
+                }
+            }
+            else if (debugRender)
+            {
+                Bounds.DrawAABB(Color.red);
+                item.AABB.DrawAABB(Color.green);
+            }
+
+            return false;
+        }
+
+        public void getAllContents(ref Collection<T> items){
 			
 			for (int i = 0; i<ObjectsInNode.Count; ++i) {
 				items.Add(ObjectsInNode[i]);

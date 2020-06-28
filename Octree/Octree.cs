@@ -11,6 +11,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace OctreeDS
 {
@@ -49,12 +50,7 @@ namespace OctreeDS
 				root.Children[i].getAllContents(ref items);
 			}
 
-			List<T> result = new List<T> (items.Count);
-			while (items.Count>0) {
-				result.Add(items[0]);
-				items.RemoveAt(0); //we remove the first item so that accessing the next item will still be O(1)
-			}
-			return result; 
+			return items.ToList();
 		}
 
 		public void GetOverlappingItems(AABB itemAABB, out Collection<T> items){
@@ -66,12 +62,24 @@ namespace OctreeDS
 
         }
 
-        //public void GetOverlappingItems(Vector3 pos, out Collection<T> items)
-        //{
-        //    items = new Collection<T>();
+		public bool Remove(T item)
+		{
+			return root.Remove(item);
+		}
 
-        //    root.GetOverlappingItems(pos, ref items);
-        //}
-    }
+		public bool EditItem(T item, Action<T> edit)
+		{
+			if (!Remove(item)) throw new InvalidOperationException("Item is not in the tree");
+			edit(item);
+			return Insert(item);
+		}
+
+		//public void GetOverlappingItems(Vector3 pos, out Collection<T> items)
+		//{
+		//    items = new Collection<T>();
+
+		//    root.GetOverlappingItems(pos, ref items);
+		//}
+	}
 }
 
