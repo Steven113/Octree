@@ -51,20 +51,30 @@ namespace OctreeDS
             return !Enumerable.Range(0, 3).Any(i => item.AABB.center[i] + item.AABB.extents[i] > Bounds.center[i] && item.AABB.center[i] - item.AABB.extents[i] < Bounds.center[i]);
         }
 
-        public bool Insert(T item, bool debugRender = false){
-			AABB itemAABB = item.AABB;
-			if (Bounds.Encloses (itemAABB)) {
-				if (!ShouldHaveChildren || !SubdivisionCanContainItem(item))
+        /// <summary>
+        /// Find where an item is in the tree, and perform the 
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="editNodeItems"></param>
+        /// <param name="debugRender"></param>
+        /// <returns></returns>
+        private bool EditItems(T item, OctreeItemOperation operation, bool debugRender = false)
+        {
+            AABB itemAABB = item.AABB;
+            if (Bounds.Encloses(itemAABB))
+            {
+                if (!ShouldHaveChildren || !SubdivisionCanContainItem(item))
                 {
-                    ObjectsInNode.Add(item);
+                    OperationToFunc[operation](ObjectsInNode, item);
                     return true;
-                } else
+                }
+                else
                 {
                     if (Children.Count == 0)
                     {
                         foreach (var extent in Bounds.EnumerateExtents())
                         {
-                             var newCentre = Bounds.center + extent / 2;
+                            var newCentre = Bounds.center + extent / 2;
 
                             //Debug.DrawLine(newCentre, Bounds.center, Color.white, 30f);
 
@@ -78,19 +88,24 @@ namespace OctreeDS
                             return true;
                     }
 
-                    ObjectsInNode.Add(item);
+                    OperationToFunc[operation](ObjectsInNode, item);
                     return true;
 
                 }
-			} else if (debugRender)
+            }
+            else if (debugRender)
             {
                 Bounds.DrawAABB(Color.red);
                 item.AABB.DrawAABB(Color.green);
             }
-			return false;
-		}
+            return false;
+        }
 
-		public void getAllContents(ref Collection<T> items){
+        public bool Insert(T item, bool debugRender = false) => EditItems(item, OctreeItemOperation.Add, debugRender);
+
+        internal bool Remove(T item, bool debugRender = false) => EditItems(item, OctreeItemOperation.Remove, debugRender);
+
+        public void getAllContents(ref Collection<T> items){
 			
 			for (int i = 0; i<ObjectsInNode.Count; ++i) {
 				items.Add(ObjectsInNode[i]);
@@ -118,27 +133,20 @@ namespace OctreeDS
 			}
 		}
 
-        //public void Query(Vector3 pos, ref Collection<T> items)
-        //{
-        //    //bounds.DrawAABB ();
-        //    if (Bounds.ContainsPoint(pos))
-        //    {
 
-        //        int count = ObjectsInNode.Count;
-        //        for (int i = 0; i < count; ++i)
-        //        {
-        //            items.Add(ObjectsInNode[i]);
-        //            //Debug.DrawRay(bounds.center.FlattenVector()+new Vector3Custom(0,5,0),(getAABBFunc(objectsInNode[i]).center-bounds.center).FlattenVector(),Color.red,3f);
-        //        }
+        public delegate void EditNodeItems(List<T> nodeItems, T item);
 
-        //        for (int i = 0; i < Children.Count; ++i)
-        //        {
-        //            //Debug.DrawRay(bounds.center.FlattenVector()+new Vector3Custom(0,5,0),(nodeList[children[i]].bounds.center-bounds.center).FlattenVector(),Color.green,3f);
-        //            Children[i].GetOverlappingItems(pos, ref items);
+        public static Dictionary<OctreeItemOperation, EditNodeItems> OperationToFunc = new Dictionary<OctreeItemOperation, EditNodeItems>()
+        {
+            [OctreeItemOperation.Add] = (items, item) => items.Add(item),
+            [OctreeItemOperation.Remove] = (items, item) => items.Remove(item),
+        };
+    }
 
-        //        }
-        //    }
-        //}
+    public enum OctreeItemOperation
+    {
+        Add,
+        Remove
     }
 }
 

@@ -137,6 +137,7 @@ namespace OctreeDS
             return true;
         }
 
+        //todo:remove
         public bool RayIntersects(Ray ray)
         {
             var closestPoint = Utils.ClosestPointOnLine(ray, center);
