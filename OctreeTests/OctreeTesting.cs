@@ -125,22 +125,6 @@ namespace OctreeTests
 
         }
 
-        [TestMethod]
-        public void AllOctreeOperationsHaveImpl()
-        {
-            var missingImpl = new List<string>();
-
-            foreach (var op in Enum.GetValues(typeof(OctreeItemOperation)))
-            {
-                if (!OctreeNode<TestObject>.OperationToFunc.ContainsKey((OctreeItemOperation)op))
-                {
-                    missingImpl.Add(op.ToString());
-                }
-            }
-
-            Assert.IsFalse(missingImpl.Any(), $"The followimg octree operations are misisng a definition for what to do with the item in the tree (e.g. add or remove it): {string.Join(",", missingImpl)}");
-        }
-
         public class TestObject : IAABBBoundedObject
         {
             public AABB AABB { get; private set; }

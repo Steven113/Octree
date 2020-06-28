@@ -66,18 +66,12 @@ namespace OctreeDS
 
         }
 
-		public bool Remove(T item)
-		{
-			return root.Remove(item);
-		}
+        //public void GetOverlappingItems(Vector3 pos, out Collection<T> items)
+        //{
+        //    items = new Collection<T>();
 
-        public T EditAndReinsert(T item, Action<T> edit)
-		{
-			Remove(item);
-			edit(item);
-			Insert(item);
-			return item;
-		}
+        //    root.GetOverlappingItems(pos, ref items);
+        //}
     }
 }
 
